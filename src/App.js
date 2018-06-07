@@ -1,48 +1,67 @@
 import React, { Component } from "react";
  
-var taskList = [];
-taskList.push({index:1, value:"start to-do app", finished: false});
-taskList.push({index:2, value:"add functionality", finished: false});
-taskList.push({index:3, value:"remove functionality", finished: false});
+var taskList = [{
+  {index:1, value:"start to-do app", finished: false},
+  {index:2, value:"add functionality", finished: false},
+  {index:3, value:"remove functionality", finished: false}
+];
 
 class App extends Component {
   constructor(props){
     super(props);
-    this.add = this.add.bind(this);
+    this.onSubmit = this.onSubmit.bind(this);
     this.remove = this.remove.bind(this);
     this.swap = this.swap.bind(this);
-    this.state = {taskList: taskList};
+    this.star = this.star.bind(this);
+    this.state = {
+      taskList: taskList,
+      numStarred: 0
+    };
   }
 
   render() {
     return (
-      <div className="todoListMain">
+      <div className="main">
         <div className="header">
-          <form onSubmit={this.addItem}>
-            <input placeholder="enter task">
-            </input>
-            <button type="submit">add</button>
+          <form onSubmit={(event) => this.onSubmit(event)}>
+            <input ref="submit" placeholder="enter task" />
+            <button>add</button>
           </form>
-          <List items={taskList} swap={this.swap} remove={this.remove}/>
+          <List items={taskList} star={this.star} swap={this.swap} remove={this.remove}/>
         </div>
       </div>
     );
   }
 
-  add(task){
+  onSubmit(event){
+    event.preventDefault();
     taskList.unshift({
       index: taskList.length+1, 
-      value: task.newItemValue, 
+      value: this.refs.submit.value, 
       done: false
     });
-    this.setState({todoItems: todoItems});
+    this.setState({taskList: taskList});
   }
 
   remove(index){
     taskList.splice(index, 1);
+    this.setState({taskList: taskList});
   }
   swap(index){
-    taskList.splice(index, 1);
+    taskList[index].finished = !taskList[index].finished;
+    this.setState({taskList: taskList});
+  }
+}
+class Starred extends Component {
+  render() {
+    var items = this.props.items.map((item, index) => {
+      return (
+          <Task key={index} item={item} index={index} remove={this.props.remove} swap={this.props.swap} />
+      );
+    });
+    return (
+      <div>{items}</div>
+    );
   }
 }
 
@@ -50,11 +69,11 @@ class List extends Component {
   render() {
     var items = this.props.items.map((item, index) => {
       return (
-        <Task key={index} item={item} index={index} remove={this.props.remove} swap={this.props.swap} />
+          <Task key={index} item={item} index={index} remove={this.props.remove} swap={this.props.swap} />
       );
     });
     return (
-      <ul> {items} </ul>
+      <div>{items}</div>
     );
   }
 }
@@ -64,18 +83,44 @@ class Task extends Component {
     super(props);
     this.remove = this.remove.bind(this);
     this.swap = this.swap.bind(this);
+    this.star = this.star.bind(this);
+    this.getColor = this.getColor.bind(this);
+    this.state = {
+      starred:false,
+      finished:false,
+      color:"#ff6b63"
+    };
   }
   render(){
     return(
-      <li>
-        <div>
-          <button onClick={this.swap()}>Done?</button>
-          {this.props.item.value}
-          <button onClick={this.remove()}>X</button>
-        </div>
-      </li>
+      <div className = "task">
+        <button onClick={() => this.star()}>★</button>
+        <span style={{backgroundColor:this.state.color}} onClick={() => this.swap()}>{this.props.item.value}</span>
+        <button onClick={() => this.remove()}>X</button>
+      </div>
     );
   }
+
+  getColor(star, fin){
+    if (!star && !fin)
+      return "#ff6b63"; //not starred, unfinished, red
+    else if (!star && fin)
+      return "#8bff5e"; //not starred, finished, green
+    else if (star && !fin)
+      return "#70ffd6"; //starred, unfinished, blue
+    else
+      return "#ffda56"; //starred, finished, gold
+  }
+
+  star(){
+    var newcolor = this.getColor(!this.state.starred, this.state.finished);
+    this.setState({
+      starred: !this.state.starred,
+      color: newcolor
+    });
+  }
+
+
   remove(){
     var index = parseInt(this.props.index);
     console.log("trying to remove ", index);
@@ -84,130 +129,15 @@ class Task extends Component {
 
   swap(){
     var index = parseInt(this.props.index);
+    var newcolor = this.getColor(this.state.starred, !this.state.finished);
     console.log("swapping at ", index);
+    this.setState({
+      finished: !this.state.finished, 
+      color: newcolor
+    });
     this.props.swap(index);
   }
 }
 
 
 export default App;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-  
-class TodoListItem extends React.Component {
-  constructor(props) {
-    super(props);
-    this.onClickClose = this.onClickClose.bind(this);
-    this.onClickDone = this.onClickDone.bind(this);
-  }
-  onClickClose() {
-    var index = parseInt(this.props.index);
-    this.props.removeItem(index);
-  }
-  onClickDone() {
-    var index = parseInt(this.props.index);
-    this.props.markTodoDone(index);
-  }
-  render () {
-    var todoClass = this.props.item.done ? 
-        "done" : "undone";
-    return(
-      <li className="list-group-item ">
-        <div className={todoClass}>
-          <span className="glyphicon glyphicon-ok icon" aria-hidden="true" onClick={this.onClickDone}></span>
-          {this.props.item.value}
-          <button type="button" className="close" onClick={this.onClickClose}>&times;</button>
-        </div>
-      </li>     
-    );
-  }
-}
-
-class TodoForm extends React.Component {
-  constructor(props) {
-    super(props);
-    this.onSubmit = this.onSubmit.bind(this);
-  }
-  componentDidMount() {
-    this.refs.itemName.focus();
-  }
-  onSubmit(event) {
-    event.preventDefault();
-    var newItemValue = this.refs.itemName.value;
-    
-    if(newItemValue) {
-      this.props.addItem({newItemValue});
-      this.refs.form.reset();
-    }
-  }
-  render () {
-    return (
-      <form ref="form" onSubmit={this.onSubmit} className="form-inline">
-        <input type="text" ref="itemName" className="form-control" placeholder="add a new todo..."/>
-        <button type="submit" className="btn btn-default">Add</button> 
-      </form>
-    );   
-  }
-}
-  
-class TodoHeader extends React.Component {
-  render () {
-    return <h1>Todo list</h1>;
-  }
-}
-  
-class TodoApp extends React.Component {
-  constructor (props) {
-    super(props);
-    this.addItem = this.addItem.bind(this);
-    this.removeItem = this.removeItem.bind(this);
-    this.markTodoDone = this.markTodoDone.bind(this);
-    this.state = {todoItems: todoItems};
-  }
-  addItem(todoItem) {
-    todoItems.unshift({
-      index: todoItems.length+1, 
-      value: todoItem.newItemValue, 
-      done: false
-    });
-    this.setState({todoItems: todoItems});
-  }
-  removeItem (itemIndex) {
-    todoItems.splice(itemIndex, 1);
-    this.setState({todoItems: todoItems});
-  }
-  markTodoDone(itemIndex) {
-    var todo = todoItems[itemIndex];
-    todoItems.splice(itemIndex, 1);
-    todo.done = !todo.done;
-    todo.done ? todoItems.push(todo) : todoItems.unshift(todo);
-    this.setState({todoItems: todoItems});  
-  }
-  render() {
-    return (
-      <div id="main">
-        <TodoHeader />
-        <TodoList items={this.props.initItems} removeItem={this.removeItem} markTodoDone={this.markTodoDone}/>
-        <TodoForm addItem={this.addItem} />
-      </div>
-    );
-  }
-}
-
-ReactDOM.render(<TodoApp initItems={todoItems}/>, document.getElementById('app'));
-
-*/
