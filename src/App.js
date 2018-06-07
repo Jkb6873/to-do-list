@@ -1,6 +1,6 @@
 import React, { Component } from "react";
  
-var taskList = [{
+var taskList = [
   {index:1, value:"start to-do app", finished: false},
   {index:2, value:"add functionality", finished: false},
   {index:3, value:"remove functionality", finished: false}
@@ -12,10 +12,8 @@ class App extends Component {
     this.onSubmit = this.onSubmit.bind(this);
     this.remove = this.remove.bind(this);
     this.swap = this.swap.bind(this);
-    this.star = this.star.bind(this);
     this.state = {
       taskList: taskList,
-      numStarred: 0
     };
   }
 
