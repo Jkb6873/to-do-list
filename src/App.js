@@ -1,19 +1,14 @@
 import React, { Component } from "react";
  
-var taskList = [
-  {index:1, value:"start to-do app", finished: false},
-  {index:2, value:"add functionality", finished: false},
-  {index:3, value:"remove functionality", finished: false}
-];
+var toBeDone = [];
 
 class App extends Component {
   constructor(props){
     super(props);
     this.onSubmit = this.onSubmit.bind(this);
     this.remove = this.remove.bind(this);
-    this.swap = this.swap.bind(this);
     this.state = {
-      taskList: taskList,
+      toBeDone: toBeDone,
     };
   }
 
@@ -25,7 +20,8 @@ class App extends Component {
             <input ref="submit" placeholder="enter task" />
             <button>add</button>
           </form>
-          <List items={taskList} star={this.star} swap={this.swap} remove={this.remove}/>
+          <h3>To Do</h3>
+          <List items={toBeDone} swap={this.swap} remove={this.remove}/>
         </div>
       </div>
     );
@@ -33,33 +29,18 @@ class App extends Component {
 
   onSubmit(event){
     event.preventDefault();
-    taskList.unshift({
-      index: taskList.length+1, 
+    toBeDone.push({
+      index: toBeDone.length, 
       value: this.refs.submit.value, 
       done: false
     });
-    this.setState({taskList: taskList});
+    this.setState({toBeDone: toBeDone});
   }
 
-  remove(index){
-    taskList.splice(index, 1);
-    this.setState({taskList: taskList});
-  }
-  swap(index){
-    taskList[index].finished = !taskList[index].finished;
-    this.setState({taskList: taskList});
-  }
-}
-class Starred extends Component {
-  render() {
-    var items = this.props.items.map((item, index) => {
-      return (
-          <Task key={index} item={item} index={index} remove={this.props.remove} swap={this.props.swap} />
-      );
-    });
-    return (
-      <div>{items}</div>
-    );
+  remove(index, list){
+    //when remove is clicked, simply remove
+    list.splice(index, 1);
+    this.setState({list: list});
   }
 }
 
@@ -67,7 +48,7 @@ class List extends Component {
   render() {
     var items = this.props.items.map((item, index) => {
       return (
-          <Task key={index} item={item} index={index} remove={this.props.remove} swap={this.props.swap} />
+          <Task item={item} list={this.props.items} key={index} index={index} starred={false} move={this.props.move} remove={this.props.remove}/>
       );
     });
     return (
@@ -80,60 +61,42 @@ class Task extends Component {
   constructor(props){
     super(props);
     this.remove = this.remove.bind(this);
-    this.swap = this.swap.bind(this);
-    this.star = this.star.bind(this);
     this.getColor = this.getColor.bind(this);
     this.state = {
-      starred:false,
-      finished:false,
-      color:"#ff6b63"
+      starred: false,
+      finished: false,
+      color: "#ff6b63"
     };
   }
+
   render(){
     return(
       <div className = "task">
-        <button onClick={() => this.star()}>★</button>
-        <span style={{backgroundColor:this.state.color}} onClick={() => this.swap()}>{this.props.item.value}</span>
-        <button onClick={() => this.remove()}>X</button>
+        <div className={this.state.starred? "fas fa-star" : "far fa-star"} onClick={() => this.star()}/>
+        <span style={{backgroundColor:this.state.color}} onClick={() => this.swap(this.props.list)}>{this.props.item.value}</span>
+        <button onClick={() => this.remove(this.props.list)}>X</button>
       </div>
     );
   }
 
-  getColor(star, fin){
-    if (!star && !fin)
-      return "#ff6b63"; //not starred, unfinished, red
-    else if (!star && fin)
-      return "#8bff5e"; //not starred, finished, green
-    else if (star && !fin)
-      return "#70ffd6"; //starred, unfinished, blue
-    else
-      return "#ffda56"; //starred, finished, gold
+  getColor(fin){
+     return fin? "#8bff5e" : "#ff6b63";
   }
-
+  
   star(){
-    var newcolor = this.getColor(!this.state.starred, this.state.finished);
-    this.setState({
-      starred: !this.state.starred,
-      color: newcolor
-    });
-  }
-
-
-  remove(){
-    var index = parseInt(this.props.index);
-    console.log("trying to remove ", index);
-    this.props.remove(index);
+    this.setState({starred: !this.state.starred});
+    this.className = this.state.starred? "fas fa-star" : "far fa-star";
+    console.log(this.state.starred);
   }
 
   swap(){
+    //var index = parseInt(this.props.index);
+    this.setState({finished: !this.state.finished, color:this.getColor(!this.state.finished)});
+  }
+
+  remove(list){
     var index = parseInt(this.props.index);
-    var newcolor = this.getColor(this.state.starred, !this.state.finished);
-    console.log("swapping at ", index);
-    this.setState({
-      finished: !this.state.finished, 
-      color: newcolor
-    });
-    this.props.swap(index);
+    this.props.remove(index, list);
   }
 }
 
